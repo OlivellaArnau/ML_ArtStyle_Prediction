@@ -1,0 +1,14 @@
+# Ignorar la carpeta de imágenes
+ML_ArtStyleTrainingData/ML_Collected_Data/
+ML_ArtStyleTrainingData/ML_Feeding_Data/
+ML_ArtStyleTrainingData/ML_Testing_Data/
+
+# Ignorar la carpeta de salida de compilación
+bin/
+obj/
+
+# Ignorar archivos de configuración de usuario de Visual Studio
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
