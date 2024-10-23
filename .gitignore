@@ -6,9 +6,12 @@ ML_ArtStyleTrainingData/ML_Testing_Data/
 # Ignorar la carpeta de salida de compilación
 bin/
 obj/
+# Ignore Visual Studio temporary files
+.vs/
 
 # Ignorar archivos de configuración de usuario de Visual Studio
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
+*.jfm

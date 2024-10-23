@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ArtStyle_API.Models;
+using ArtStyle_MLModell_Console_1;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -30,42 +31,62 @@ public class ImageController : ControllerBase
         return CreatedAtAction("GetImage", new { id = image.Id }, image);
     }
     [HttpPost("upload")]
-    public async Task<IActionResult> UploadImage(IFormFile file, string predictedArtStyle)
+    public async Task<IActionResult> UploadImage(IFormFile file)
     {
         if (file.Length > 0)
         {
-            // Define the path based on predicted art style
-            var folderPath = Path.Combine("ML_ArtStyleTrainingData", "ML_Collected_Data", predictedArtStyle);
+            // Save the uploaded file temporarily
+            var tempFilePath = Path.Combine("ruta/temporal", file.FileName);
 
-            // Create the directory if it doesn't exist
-            if (!Directory.Exists(folderPath))
-            {
-                Directory.CreateDirectory(folderPath);
-            }
-
-            // Combine the file path
-            var filePath = Path.Combine(folderPath, file.FileName);
-
-            // Save the image to the specified path
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            using (var stream = new FileStream(tempFilePath, FileMode.Create))
             {
                 await file.CopyToAsync(stream);
             }
 
-            // Save image metadata in the database
+            // Load the image as a byte array for ML model input
+            byte[] imageBytes;
+            using (var stream = new MemoryStream())
+            {
+                await file.CopyToAsync(stream);
+                imageBytes = stream.ToArray();
+            }
+
+            // Prepare the input for the ML model
+            var mlContext = new MLContext();
+            var modelInput = new ArtStyle_MLModell_Console_1.ModelInput
+            {
+                ImageSource = imageBytes
+            };
+
+            // Get the prediction result
+            var result = ArtStyle_MLModell_Console_1.Predict(modelInput);
+            var predictedStyle = result.PredictedLabel;
+
+            // Move the image to the folder based on the predicted style
+            var targetFolder = Path.Combine("ruta/ML_Collected_Data", predictedStyle);
+            if (!Directory.Exists(targetFolder))
+            {
+                Directory.CreateDirectory(targetFolder);
+            }
+
+            var finalFilePath = Path.Combine(targetFolder, file.FileName);
+            System.IO.File.Move(tempFilePath, finalFilePath);
+
+            // Save the image information to the database
             var image = new Image
             {
-                ImagePath = filePath,
-                //ArtStyle = predictedArtStyle
+                ImagePath = finalFilePath,
+                ArtStyle = predictedStyle
             };
 
             _context.Images.Add(image);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Image uploaded successfully", imagePath = filePath });
+            return Ok(new { predictedStyle, finalFilePath });
         }
 
         return BadRequest("No file uploaded");
     }
+
 }
 
