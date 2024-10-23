@@ -33,60 +33,40 @@ public class ImageController : ControllerBase
     [HttpPost("upload")]
     public async Task<IActionResult> UploadImage(IFormFile file)
     {
-        if (file.Length > 0)
+        if (file == null || file.Length == 0)
         {
-            // Save the uploaded file temporarily
-            var tempFilePath = Path.Combine("ruta/temporal", file.FileName);
-
-            using (var stream = new FileStream(tempFilePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            // Load the image as a byte array for ML model input
-            byte[] imageBytes;
-            using (var stream = new MemoryStream())
-            {
-                await file.CopyToAsync(stream);
-                imageBytes = stream.ToArray();
-            }
-
-            // Prepare the input for the ML model
-            var mlContext = new MLContext();
-            var modelInput = new ArtStyle_MLModell_Console_1.ModelInput
-            {
-                ImageSource = imageBytes
-            };
-
-            // Get the prediction result
-            var result = ArtStyle_MLModell_Console_1.Predict(modelInput);
-            var predictedStyle = result.PredictedLabel;
-
-            // Move the image to the folder based on the predicted style
-            var targetFolder = Path.Combine("ruta/ML_Collected_Data", predictedStyle);
-            if (!Directory.Exists(targetFolder))
-            {
-                Directory.CreateDirectory(targetFolder);
-            }
-
-            var finalFilePath = Path.Combine(targetFolder, file.FileName);
-            System.IO.File.Move(tempFilePath, finalFilePath);
-
-            // Save the image information to the database
-            var image = new Image
-            {
-                ImagePath = finalFilePath,
-                ArtStyle = predictedStyle
-            };
-
-            _context.Images.Add(image);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { predictedStyle, finalFilePath });
+            return BadRequest("No file uploaded.");
         }
 
-        return BadRequest("No file uploaded");
+        // Aquí puedes realizar la predicción y obtener la etiqueta
+        var imageBytes = await ConvertFileToByteArray(file);
+        var input = new ArtStyle_MLModell.ModelInput { ImageSource = imageBytes };
+        var prediction = ArtStyle_MLModell.Predict(input);
+        var predictedLabel = prediction.PredictedLabel;
+
+        // Define la ruta donde deseas guardar la imagen
+        string directoryPath = Path.Combine(@"E:\Documentos\Estudios\Erasmus\ML_Project_Artstyle_Prediction\ML_ArtStyleTrainingData\ML_Collected_Data", predictedLabel);
+        Directory.CreateDirectory(directoryPath); // Crea la carpeta si no existe
+
+        // Define la ruta completa del archivo
+        string filePath = Path.Combine(directoryPath, file.FileName);
+
+        // Guarda el archivo en la ruta especificada
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        return Ok(new { FilePath = filePath, PredictedLabel = predictedLabel });
     }
 
+    private async Task<byte[]> ConvertFileToByteArray(IFormFile file)
+    {
+        using (var memoryStream = new MemoryStream())
+        {
+            await file.CopyToAsync(memoryStream);
+            return memoryStream.ToArray();
+        }
+    }
 }
 

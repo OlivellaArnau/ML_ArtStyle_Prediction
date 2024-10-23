@@ -16,4 +16,8 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ArtStyle_MLModell_Console_1\ArtStyle_MLModell_Console_1.csproj" />
+  </ItemGroup>
+
 </Project>
