@@ -49,7 +49,7 @@ namespace ArtStyle_MLModell_Console_1
 
         #endregion
 
-        private static string MLNetModelPath = Path.GetFullPath("ArtStyle_MLModell.mlnet");
+        private static string MLNetModelPath = Path.GetFullPath("E:\\Documentos\\Estudios\\Erasmus\\ML_Project_Artstyle_Prediction\\ML_ArtStyle_Prediction\\ArtStyle_MLModell_Console_1\\ArtStyle_MLModell.mlnet");
 
         public static readonly Lazy<PredictionEngine<ModelInput, ModelOutput>> PredictEngine = new Lazy<PredictionEngine<ModelInput, ModelOutput>>(() => CreatePredictEngine(), true);
 
